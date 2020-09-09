@@ -1,22 +1,24 @@
 package com.github.xelamanster.beanconverter
 
-import com.github.xelamanster.beanconverter.model.operations.Operation
-import com.github.xelamanster.beanconverter.model.{Account, BeanConverter}
+import com.github.xelamanster.beanconverter.BeanConverter
+import com.github.xelamanster.beanconverter.model.Account
 import com.github.xelamanster.beanconverter.model.Transaction
+import com.github.xelamanster.beanconverter.model.Row
+import com.github.xelamanster.beanconverter.model.operations.Operation
 
-class MergeSettings[T, S <: FileSettings, T2, S2 <: FileSettings](
+class MergeSettings[T <: Row, S <: FileSettings, T2 <: Row, S2 <: FileSettings](
     val readSettings: ReadSettings[T, S],
     val readSettingsFallback: ReadSettings[T2, S2],
     val exportSettings: ExportSettings,
     val replaceCheck: ReplaceCheck
 )
 
-class Settings[T, S <: FileSettings](
+class Settings[T <: Row, S <: FileSettings](
     val readSettings: ReadSettings[T, S],
     val exportSettings: ExportSettings
 )
 
-case class ReadSettings[T, S <: FileSettings](
+final case class ReadSettings[T <: Row, S <: FileSettings](
     val filesSettings: Seq[S],
     val contentSettings: ContentSettings,
     val converter: BeanConverter[T, S]
@@ -25,8 +27,6 @@ case class ReadSettings[T, S <: FileSettings](
 trait FileSettings {
   def fileName: String
 }
-
-final case class CsvSettings(fileName: String) extends FileSettings
 
 case class ContentSettings(
     sourceAccount: Account,

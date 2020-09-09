@@ -10,6 +10,7 @@ lazy val core = (project in file("core"))
     libraryDependencies ++= Seq(zio, cats),
     scalacOptions ++= Seq("-Ywarn-unused", "-deprecation")
   )
+  .dependsOn(utils)
 
 lazy val utils = (project in file("utils"))
   .settings(

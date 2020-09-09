@@ -16,12 +16,12 @@ object Transaction {
   object implicits {
 
     implicit val showT: Show[Transfer] =
-      t => s"""${t.date} * "${t.comment}"
+      t => s"""${t.date} * "${t.comment.replaceAll("\"", "'")}"
               |  ${t.from.name} ${t.amount} ${t.currency}
               |  ${t.to.name} ${t.amount * -1} ${t.currency}""".stripMargin
 
     implicit val showE: Show[Exchange] =
-      e => s"""${e.date} * "${e.comment}"
+      e => s"""${e.date} * "${e.comment.replaceAll("\"", "'")}"
               |  ${e.from.name} ${e.fromAmount} ${e.fromCurrency}
               |  ${e.to.name} ${e.toAmount * -1} ${e.toCurrency} @ ${e.rate}""".stripMargin
 

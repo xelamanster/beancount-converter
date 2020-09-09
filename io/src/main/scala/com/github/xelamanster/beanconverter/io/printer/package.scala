@@ -1,4 +1,4 @@
-package com.github.xelamanster.beanconverter.io.printer
+package com.github.xelamanster.beanconverter.io
 
 import java.io.{File, FileWriter}
 
@@ -12,7 +12,7 @@ import scala.util.Using
 import cats.implicits._
 import com.github.xelamanster.beanconverter.ExportSettings
 
-object Instances {
+package object printer {
   object ConsolePrinter extends Printer {
 
     override def print[T: Show](

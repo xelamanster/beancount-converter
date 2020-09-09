@@ -2,7 +2,8 @@ package com.github.xelamanster.beanconverter
 
 import cats.data.ValidatedNec
 import cats.implicits._
-import com.github.xelamanster.beanconverter.model.{BeanCheckError, BeanConverterError, Transaction}
+import com.github.xelamanster.beanconverter.model.Transaction
+import com.github.xelamanster.beanconverter.{BeanCheckError, BeanConverterError}
 
 object BeanChecker {
 

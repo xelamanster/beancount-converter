@@ -1,4 +1,6 @@
-package com.github.xelamanster.beanconverter.model
+package com.github.xelamanster.beanconverter
+
+import com.github.xelamanster.beanconverter.model._
 
 sealed trait BeanConverterError
 
