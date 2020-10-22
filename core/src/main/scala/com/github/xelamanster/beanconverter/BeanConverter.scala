@@ -25,6 +25,10 @@ class BeanConverter[R <: Row: TypedIterableParser, S <: FileSettings](
     convertRow: ConvertRow[R]
 ) {
 
+  def convert(contentSettings: ContentSettings, fileSettings: S): IO[BeanConverterError, List[Transaction]] =
+    readRows(fileSettings)
+      .flatMap(convertRows(contentSettings))
+
   private def readRows(fileSettings: S): IO[BeanReaderError, List[R]] =
     readFileRow(fileSettings).flatMap(fileData)
 
@@ -38,11 +42,6 @@ class BeanConverter[R <: Row: TypedIterableParser, S <: FileSettings](
     )
 
   private def decodeRaw(values: Seq[String]): ValidatedNec[TypedParserError, R] = values.parse[R]
-
-  def convert(contentSettings: ContentSettings, fileSettings: S): IO[BeanConverterError, List[Transaction]] = {
-    readRows(fileSettings)
-      .flatMap(convertRows(contentSettings))
-  }
 
   private def convertRows(contentSettings: ContentSettings)(rows: List[R]) = {
 

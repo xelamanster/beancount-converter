@@ -4,7 +4,7 @@ import java.io.File
 
 import com.github.tototoshi.csv.CSVReader
 import com.github.xelamanster.beanconverter.{BeanReaderError, FileReadError}
-import com.github.xelamanster.beanconverter.CsvSettings
+import com.github.xelamanster.beanconverter.io.csv.CsvSettings
 import com.github.xelamanster.beanconverter.BeanConverter.ReadFileRow
 import zio.IO
 
