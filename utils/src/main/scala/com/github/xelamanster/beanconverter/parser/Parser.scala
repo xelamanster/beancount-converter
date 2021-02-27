@@ -37,6 +37,8 @@ object Parser {
 
         Try(parse("dd.MM.yyyy"))
           .orElse(Try(parse("d/MM/yyyy")))
+          .orElse(Try(parse("yyyy/MM/dd")))
+          .orElse(Try(parse("MMM d, yyyy ")))
           .toOption
 
       }
