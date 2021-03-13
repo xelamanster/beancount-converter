@@ -13,19 +13,11 @@ object ConverterApp {
       readRow: ReadFileRow[S],
       convertRow: ConvertRow[T],
       printer: Printer
-  ): Unit = ???
-    // settings
-    // app(
-    //   ZIO
-    //     .foreach(settings)(loop(readRow, convertRow, printer))
-    // )
-
-  // private def app[Er, T](loop: ZIO[Console, Er, T]): Either[Throwable, Int] =
-  //   loop
-  //     .mapError { e =>
-  //       println(e); e
-  //     }
-  //     .fold(_ => 1, _ => 0)
+  ): Unit =
+    settings.map(loop(readRow, convertRow, printer)).foreach {
+      case Left(e) => println(e)
+      case Right(_) =>
+    }
 
   private def loop[T <: Row: TypedIterableParser, S <: FileSettings](
       readRow: ReadFileRow[S],
@@ -34,7 +26,6 @@ object ConverterApp {
   )(settings: Settings[T, S]) =
     for {
       transactions <- readTransactions(readRow, convertRow, settings.readSettings)
-      // _ <- IO.fromEither(BeanChecker.check(transactions))
       _ <- printer.print(transactions, settings.writeSettings)
     } yield ()
 
@@ -43,19 +34,21 @@ object ConverterApp {
       convertRow: ConvertRow[T],
       settings: ReadSettings[T, S]
   ): Either[Throwable, List[Transaction]] = {
-    
-    // val converter = new BeanConverter(readRow, convertRow)
-    // settings.filesSettings
-    // IO.foreach(settings.filesSettings)(converter.convert(settings.contentSettings, _))
-    //   .map(_.flatten)
-    ???
+    val converter = new BeanConverter(readRow, convertRow)
+    settings.filesSettings
+      .foldLeft[Either[Throwable, List[Transaction]]](Right(List.empty)) { case (r, file) =>
+        for {
+          res <- r
+          t <- converter.convert(settings.contentSettings, file)
+        } yield res ++ t
+      }
   }
 
   def merge[
-      T <: Row: ConvertRow: TypedIterableParser,
-      S <: FileSettings: ReadFileRow,
-      T2 <: Row: ConvertRow: TypedIterableParser,
-      S2 <: FileSettings: ReadFileRow
+      T <: Row: TypedIterableParser,
+      S <: FileSettings,
+      T2 <: Row: TypedIterableParser,
+      S2 <: FileSettings
   ](
       mergeSettings: MergeSettings[T, S, T2, S2],
       readRow: ReadFileRow[S],
@@ -63,21 +56,18 @@ object ConverterApp {
       readFalbackRow: ReadFileRow[S2],
       convertFalbackRow: ConvertRow[T2],
       printer: Printer
-  ): Unit = ???
-    // app(
-    //   for {
-    //     transactions <- readTransactions(readRow, convertRow, mergeSettings.readSettings)
-    //     fallback <- readTransactions(readFalbackRow, convertFalbackRow, mergeSettings.readSettingsFallback)
-    //     merged =
-    //       transactions
-    //         .foldLeft(List.empty[Transaction]) { case (list, t) =>
-    //           fallbackTo(t, fallback, mergeSettings.replaceCheck) :: list
-    //         }
-    //         .reverse
-    //     // _ <- IO.fromEither(BeanChecker.check(merged))
-    //     _ <- printer.print(merged, mergeSettings.exportSettings)
-    //   } yield ()
-    // )
+  ): Unit =
+    (for {
+      transactions <- readTransactions(readRow, convertRow, mergeSettings.readSettings)
+      fallback <- readTransactions(readFalbackRow, convertFalbackRow, mergeSettings.readSettingsFallback)
+      merged =
+        transactions
+          .foldLeft(List.empty[Transaction]) { case (list, t) =>
+            fallbackTo(t, fallback, mergeSettings.replaceCheck) :: list
+          }
+          .reverse
+      _ <- printer.print(merged, mergeSettings.exportSettings)
+    } yield ()).left.foreach(println)
 
   private def fallbackTo(
       transaction: Transaction,

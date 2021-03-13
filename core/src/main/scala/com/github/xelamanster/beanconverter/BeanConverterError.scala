@@ -2,7 +2,7 @@ package com.github.xelamanster.beanconverter
 
 import com.github.xelamanster.beanconverter.model._
 
-sealed trait BeanConverterError
+sealed trait BeanConverterError extends Throwable
 
 sealed trait BeanReaderError extends BeanConverterError
 final case class FileReadError(e: Throwable) extends BeanReaderError
