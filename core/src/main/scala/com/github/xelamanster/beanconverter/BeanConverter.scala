@@ -6,9 +6,8 @@ import com.github.xelamanster.beanconverter.model._
 import com.github.xelamanster.beanconverter.{ContentSettings, FileSettings}
 import com.github.xelamanster.beanconverter.model.operations.Operation
 import cats.implicits._
-// import com.github.xelamanster.beanconverter.parser.TypedIterableParser.implicits._
 import com.github.xelamanster.beanconverter.model.operations.Operation.Ignore
-import com.github.xelamanster.beanconverter.parser.{TypedIterableParser, TypedParserError}
+import com.github.xelamanster.beanconverter.parser.{Parser, DecodeError}
 import BeanConverter.{ReadFileRow, ConvertRow}
 
 object BeanConverter {
@@ -18,7 +17,7 @@ object BeanConverter {
   def apply[R <: Row, S <: FileSettings](implicit converter: BeanConverter[R, S]): BeanConverter[R, S] = converter
 }
 
-class BeanConverter[R <: Row: TypedIterableParser, S <: FileSettings](
+class BeanConverter[R <: Row: Parser, S <: FileSettings](
     readFileRow: ReadFileRow[S],
     convertRow: ConvertRow[R]
 ) {
@@ -37,7 +36,7 @@ class BeanConverter[R <: Row: TypedIterableParser, S <: FileSettings](
         .toEither
         .leftMap(e => FileParseError(e.toList.map(_.message): _*))
 
-  private def decodeRaw(values: Seq[String]): ValidatedNec[TypedParserError, R] = ??? // values.parse[R]
+  private def decodeRaw(values: Seq[String]): ValidatedNec[DecodeError, R] = summon[Parser[R]].parse(values)
 
   private def convertRows(contentSettings: ContentSettings)(rows: List[R]) = {
 

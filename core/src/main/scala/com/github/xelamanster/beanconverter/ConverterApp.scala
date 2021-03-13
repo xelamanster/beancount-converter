@@ -4,11 +4,11 @@ import com.github.xelamanster.beanconverter.model.Transaction.implicits._
 import com.github.xelamanster.beanconverter.BeanConverter.ConvertRow
 import com.github.xelamanster.beanconverter.BeanConverter.ReadFileRow
 import com.github.xelamanster.beanconverter.model.{Printer, Transaction, Row}
-import com.github.xelamanster.beanconverter.parser.TypedIterableParser
+import com.github.xelamanster.beanconverter.parser.Parser
 
 object ConverterApp {
 
-  def convert[T <: Row: TypedIterableParser, S <: FileSettings](
+  def convert[T <: Row: Parser, S <: FileSettings](
       settings: Seq[Settings[T, S]],
       readRow: ReadFileRow[S],
       convertRow: ConvertRow[T],
@@ -19,7 +19,7 @@ object ConverterApp {
       case Right(_) =>
     }
 
-  private def loop[T <: Row: TypedIterableParser, S <: FileSettings](
+  private def loop[T <: Row: Parser, S <: FileSettings](
       readRow: ReadFileRow[S],
       convertRow: ConvertRow[T],
       printer: Printer
@@ -29,7 +29,7 @@ object ConverterApp {
       _ <- printer.print(transactions, settings.writeSettings)
     } yield ()
 
-  private def readTransactions[T <: Row: TypedIterableParser, S <: FileSettings](
+  private def readTransactions[T <: Row: Parser, S <: FileSettings](
       readRow: ReadFileRow[S],
       convertRow: ConvertRow[T],
       settings: ReadSettings[T, S]
@@ -45,9 +45,9 @@ object ConverterApp {
   }
 
   def merge[
-      T <: Row: TypedIterableParser,
+      T <: Row: Parser,
       S <: FileSettings,
-      T2 <: Row: TypedIterableParser,
+      T2 <: Row: Parser,
       S2 <: FileSettings
   ](
       mergeSettings: MergeSettings[T, S, T2, S2],

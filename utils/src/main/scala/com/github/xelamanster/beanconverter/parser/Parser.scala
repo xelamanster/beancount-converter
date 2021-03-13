@@ -2,13 +2,22 @@ package com.github.xelamanster.beanconverter.parser
 
 import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
+import cats.data.ValidatedNec
+import cats.implicits._
 
 import scala.util.Try
 
 import scala.deriving.*
 
+trait Parser[X]:
+  def parse(from: Iterable[String]): ValidatedNec[DecodeError, X]
+
 object Parser:
   
+  def create[X](using m: Mirror.ProductOf[X], d: RawDecoder[m.MirroredElemTypes]) =
+    new Parser[X]:
+      def parse(from: Iterable[String]): ValidatedNec[DecodeError, X] = Parser.parse(from).toValidatedNec
+
   def parseTuple[X <: Tuple : RawDecoder](raw: Raw): Either[DecodeError, X] =
     summon[RawDecoder[X]].decode(raw)
   
@@ -18,8 +27,8 @@ object Parser:
 end Parser
   
 type RawField = String
-type Raw = List[RawField]
-type DecodeError = String
+type Raw = Iterable[RawField]
+case class DecodeError(message: String) extends Throwable
 
 trait RawDecoder[T]:
   def decode(raw: Raw): Either[DecodeError, T]
@@ -35,16 +44,16 @@ object Decoders:
 
   given FieldDecoder[Boolean] with
     def decode(raw: RawField): Either[DecodeError, Boolean] =
-      raw.toBooleanOption.toRight(s"Cant parse Boolean from [$raw]")
+      raw.toBooleanOption.toRight(DecodeError(s"Cant parse Boolean from [$raw]"))
 
   given FieldDecoder[Int] with
     def decode(raw: RawField): Either[DecodeError, Int] =
-      raw.toIntOption.toRight(s"Cant parse Int from [$raw]")
+      raw.toIntOption.toRight(DecodeError(s"Cant parse Int from [$raw]"))
 
   given RawDecoder[EmptyTuple] with
     def decode(remain: Raw): Either[DecodeError, EmptyTuple] = 
       if remain.isEmpty then Right(EmptyTuple)
-      else Left(s"Left unparsed [$remain]")
+      else Left(DecodeError(s"Left unparsed [$remain]"))
 
   given [H: FieldDecoder, T <: Tuple : RawDecoder]: RawDecoder[H *: T] with
     def decode(raw: Raw): Either[DecodeError, H *: T] =
