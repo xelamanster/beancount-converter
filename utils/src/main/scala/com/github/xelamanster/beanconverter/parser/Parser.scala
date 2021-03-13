@@ -5,48 +5,94 @@ import java.time.format.DateTimeFormatter
 
 import scala.util.Try
 
-trait Parser[T] {
-  def parse(raw: String): Option[T]
-}
+import scala.deriving.*
 
-object Parser {
-  def apply[T: Parser]: Parser[T] = implicitly[Parser[T]]
+object Parser:
+  
+  def parseTuple[X <: Tuple : RawDecoder](raw: Raw): Either[DecodeError, X] =
+    summon[RawDecoder[X]].decode(raw)
+  
+  def parse[X](raw: Raw)(using m: Mirror.ProductOf[X], d: RawDecoder[m.MirroredElemTypes]): Either[DecodeError, X] =
+    parseTuple[m.MirroredElemTypes](raw).map(m.fromProduct)
 
-  object implicits {
-    implicit val intParser: Parser[Int] = _.toIntOption
+end Parser
+  
+type RawField = String
+type Raw = List[RawField]
+type DecodeError = String
 
-    implicit val doubleParser: Parser[Double] =
-      raw =>
-        if (raw.isEmpty) Option(0.0)
-        else raw.toDoubleOption
+trait RawDecoder[T]:
+  def decode(raw: Raw): Either[DecodeError, T]
 
-    implicit val bigDecimalParser: Parser[BigDecimal] =
-      raw => {
-        val prepared =
-          if (raw.contains(",")) raw.replace(",", ".")
-          else raw
+trait FieldDecoder[T]:
+  def decode(raw: RawField): Either[DecodeError, T]
 
-        doubleParser
-          .parse(prepared)
-          .map(BigDecimal.apply)
-      }
+object Decoders:
 
-    implicit val dateParser: Parser[LocalDate] =
-      rawDate => {
-        def parse(pattern: String) = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern(pattern))
+  given FieldDecoder[String] with
+    def decode(raw: RawField): Either[DecodeError, String] =
+      Right(raw) 
 
-        Try(parse("dd.MM.yyyy"))
-          .orElse(Try(parse("d/MM/yyyy")))
-          .orElse(Try(parse("yyyy/MM/dd")))
-          .orElse(Try(parse("MMM d, yyyy ")))
-          .toOption
+  given FieldDecoder[Boolean] with
+    def decode(raw: RawField): Either[DecodeError, Boolean] =
+      raw.toBooleanOption.toRight(s"Cant parse Boolean from [$raw]")
 
-      }
+  given FieldDecoder[Int] with
+    def decode(raw: RawField): Either[DecodeError, Int] =
+      raw.toIntOption.toRight(s"Cant parse Int from [$raw]")
 
-    implicit val dateTimeParser: Parser[LocalDateTime] =
-      raw => Try(LocalDateTime.parse(raw, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"))).toOption
+  given RawDecoder[EmptyTuple] with
+    def decode(remain: Raw): Either[DecodeError, EmptyTuple] = 
+      if remain.isEmpty then Right(EmptyTuple)
+      else Left(s"Left unparsed [$remain]")
 
-    implicit val stringParser: Parser[String] = Option(_)
-  }
+  given [H: FieldDecoder, T <: Tuple : RawDecoder]: RawDecoder[H *: T] with
+    def decode(raw: Raw): Either[DecodeError, H *: T] =
+      for {
+        t1 <- summon[FieldDecoder[H]].decode(raw.head)
+        t2 <- summon[RawDecoder[T]].decode(raw.tail)
+      } yield Tuple(t1) ++ t2
 
-}
+end Decoders
+
+// object Parser {
+//   def apply[T: Parser]: Parser[T] = implicitly[Parser[T]]
+
+//   object implicits {
+//     implicit val intParser: Parser[Int] = _.toIntOption
+
+//     implicit val doubleParser: Parser[Double] =
+//       raw =>
+//         if (raw.isEmpty) Option(0.0)
+//         else raw.toDoubleOption
+
+//     implicit val bigDecimalParser: Parser[BigDecimal] =
+//       raw => {
+//         val prepared =
+//           if (raw.contains(",")) raw.replace(",", ".")
+//           else raw
+
+//         doubleParser
+//           .parse(prepared)
+//           .map(BigDecimal.apply)
+//       }
+
+//     implicit val dateParser: Parser[LocalDate] =
+//       rawDate => {
+//         def parse(pattern: String) = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern(pattern))
+
+//         Try(parse("dd.MM.yyyy"))
+//           .orElse(Try(parse("d/MM/yyyy")))
+//           .orElse(Try(parse("yyyy/MM/dd")))
+//           .orElse(Try(parse("MMM d, yyyy ")))
+//           .toOption
+
+//       }
+
+//     implicit val dateTimeParser: Parser[LocalDateTime] =
+//       raw => Try(LocalDateTime.parse(raw, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"))).toOption
+
+//     implicit val stringParser: Parser[String] = Option(_)
+//   }
+
+// }

@@ -4,10 +4,9 @@ import java.io.{File, FileWriter}
 
 import cats.Show
 import com.github.xelamanster.beanconverter.model.Printer
-import zio.ZIO
-import zio.console.{Console, putStrLn}
 
 import scala.util.Using
+import scala.util.Try
 
 import cats.implicits._
 import com.github.xelamanster.beanconverter.WriteSettings
@@ -18,13 +17,13 @@ package object printer {
     override def print[T: Show](
         content: Seq[T],
         settings: WriteSettings
-    ): ZIO[Console, Throwable, Unit] = {
+    ): Either[Throwable, Unit] = {
       val formattedContent =
         content
           .map(_.show)
           .mkString(System.lineSeparator() * 2)
 
-      putStrLn(formattedContent)
+      Try(println(formattedContent)).toEither
     }
   }
 
@@ -33,8 +32,8 @@ package object printer {
     override def print[T: Show](
         content: Seq[T],
         settings: WriteSettings
-    ): ZIO[Console, Throwable, Unit] =
-      putStrLn("")
+    ): Either[Throwable, Unit] =
+      Right(())
   }
 
   object FilePrinter extends Printer {
@@ -42,13 +41,12 @@ package object printer {
     override def print[T: Show](
         content: Seq[T],
         settings: WriteSettings
-    ): ZIO[Console, Throwable, Unit] = {
+    ): Either[Throwable, Unit] = {
       val file = new File(settings.filename)
-      ZIO.fromTry(
-        Using(new FileWriter(file))(
-          _.write(content.map(_.show).mkString(System.lineSeparator() * 2))
-        )
-      )
+
+      Using(new FileWriter(file))(
+        _.write(content.map(_.show).mkString(System.lineSeparator() * 2))
+      ).toEither
     }
 
   }

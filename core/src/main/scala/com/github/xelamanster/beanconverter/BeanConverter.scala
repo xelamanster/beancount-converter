@@ -6,15 +6,13 @@ import com.github.xelamanster.beanconverter.model._
 import com.github.xelamanster.beanconverter.{ContentSettings, FileSettings}
 import com.github.xelamanster.beanconverter.model.operations.Operation
 import cats.implicits._
-import com.github.xelamanster.beanconverter.parser.TypedIterableParser.implicits._
+// import com.github.xelamanster.beanconverter.parser.TypedIterableParser.implicits._
 import com.github.xelamanster.beanconverter.model.operations.Operation.Ignore
 import com.github.xelamanster.beanconverter.parser.{TypedIterableParser, TypedParserError}
 import BeanConverter.{ReadFileRow, ConvertRow}
 
-import zio.IO
-
 object BeanConverter {
-  type ReadFileRow[S <: FileSettings] = S => IO[BeanReaderError, List[List[String]]]
+  type ReadFileRow[S <: FileSettings] = S => Either[BeanReaderError, List[List[String]]]
   type ConvertRow[R <: Row] = (R, Account, Operation) => Transaction
 
   def apply[R <: Row, S <: FileSettings](implicit converter: BeanConverter[R, S]): BeanConverter[R, S] = converter
@@ -25,23 +23,21 @@ class BeanConverter[R <: Row: TypedIterableParser, S <: FileSettings](
     convertRow: ConvertRow[R]
 ) {
 
-  def convert(contentSettings: ContentSettings, fileSettings: S): IO[BeanConverterError, List[Transaction]] =
+  def convert(contentSettings: ContentSettings, fileSettings: S): Either[BeanConverterError, List[Transaction]] =
     readRows(fileSettings)
       .flatMap(convertRows(contentSettings))
 
-  private def readRows(fileSettings: S): IO[BeanReaderError, List[R]] =
+  private def readRows(fileSettings: S): Either[BeanReaderError, List[R]] =
     readFileRow(fileSettings).flatMap(fileData)
 
-  private def fileData(fileData: List[List[String]]): IO[FileParseError, List[R]] =
-    IO.fromEither(
+  private def fileData(fileData: List[List[String]]): Either[FileParseError, List[R]] =
       fileData
         .map(decodeRaw)
         .sequence
         .toEither
         .leftMap(e => FileParseError(e.toList.map(_.message): _*))
-    )
 
-  private def decodeRaw(values: Seq[String]): ValidatedNec[TypedParserError, R] = values.parse[R]
+  private def decodeRaw(values: Seq[String]): ValidatedNec[TypedParserError, R] = ??? // values.parse[R]
 
   private def convertRows(contentSettings: ContentSettings)(rows: List[R]) = {
 
@@ -55,16 +51,14 @@ class BeanConverter[R <: Row: TypedIterableParser, S <: FileSettings](
             List(convertRow(row, contentSettings.sourceAccount, o)).validNec
         }
 
-    def combineErrors(errors: NonEmptyChain[ConvertionError]) =
+    def combineErrors(errors: NonEmptyChain[ConvertionError]): ConvertionError =
       ConvertionError(errors.toList.flatMap(_.messages): _*)
 
-    IO.fromEither(
-      rows
-        .flatMap(fromRow(_).sequence)
-        .sequence
-        .toEither
-        .leftMap(combineErrors)
-    )
+    rows
+      .flatMap(fromRow(_).sequence)
+      .sequence
+      .toEither
+      .leftMap(combineErrors)
   }
 
   private def findTarget(description: String, settings: ContentSettings) = {

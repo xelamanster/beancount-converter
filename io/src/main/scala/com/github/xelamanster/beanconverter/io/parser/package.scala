@@ -9,8 +9,8 @@ package object parser {
 
   object implicits {
 
-    implicit val currency: Parser[Currency.Value] =
-      rawCurrency => Try(Currency.withName(rawCurrency)).toOption
+  //   implicit val currency: Parser[Currency.Value] =
+  //     rawCurrency => Try(Currency.withName(rawCurrency)).toOption
   }
 
 }

@@ -6,7 +6,6 @@ import com.github.xelamanster.beanconverter.BeanConverter.ReadFileRow
 import com.github.xelamanster.beanconverter.{BeanReaderError, FileReadError}
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy
 import org.apache.poi.ss.usermodel.{Row, WorkbookFactory}
-import zio.IO
 
 import scala.util.Using
 import org.apache.poi.ss.usermodel.Cell
@@ -14,7 +13,7 @@ import org.apache.poi.ss.usermodel.CellType
 
 object ReadXlsx extends ReadFileRow[XlsxSettings] {
 
-  override def apply(settings: XlsxSettings): IO[BeanReaderError, List[List[String]]] = {
+  override def apply(settings: XlsxSettings): Either[BeanReaderError, List[List[String]]] = {
 
     def cellToString(cell: Cell): String = cell.getCellType() match {
       case CellType.BLANK => ""
@@ -35,13 +34,11 @@ object ReadXlsx extends ReadFileRow[XlsxSettings] {
   }
 
   private def readFile(settings: XlsxSettings) =
-    IO.fromTry(
-      Using(WorkbookFactory.create(new File(settings.fileName))) { wb =>
-        val sheet = wb.getSheetAt(settings.worksheetId)
+    Using(WorkbookFactory.create(new File(settings.fileName))) { wb =>
+      val sheet = wb.getSheetAt(settings.worksheetId)
 
-        (settings.topLeft.y - 1 until settings.bottomLeft.y)
-          .map(sheet.getRow)
-          .toList
-      }
-    ).mapError(FileReadError.apply)
+      (settings.topLeft.y - 1 until settings.bottomLeft.y)
+        .map(sheet.getRow)
+        .toList
+    }.toEither.left.map(FileReadError.apply)
 }
