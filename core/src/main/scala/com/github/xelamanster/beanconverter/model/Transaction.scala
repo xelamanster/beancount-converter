@@ -36,7 +36,7 @@ object Transaction {
       from: Account,
       to: Account,
       amount: BigDecimal,
-      currency: Currency.Value,
+      currency: Currency,
       comment: String
   ) extends Transaction
 
@@ -44,10 +44,10 @@ object Transaction {
       date: LocalDate,
       from: Account,
       fromAmount: BigDecimal,
-      fromCurrency: Currency.Value,
+      fromCurrency: Currency,
       to: Account,
       toAmount: BigDecimal,
-      toCurrency: Currency.Value,
+      toCurrency: Currency,
       rate: BigDecimal,
       comment: String
   ) extends Transaction

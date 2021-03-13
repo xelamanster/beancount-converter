@@ -1,20 +1,14 @@
 package com.github.xelamanster.beanconverter.model
 
-object Currency extends Enumeration {
-
-  protected case class Currency(code: Int, translations: Seq[String] = Seq.empty) extends super.Val
-
-  import scala.language.implicitConversions
-  implicit def valueToCurrency(x: Value): Val = x.asInstanceOf[Val]
-
-  val UAH = Currency(1, Seq("ГРН"))
-  val EUR = Currency(2)
-  val CZK = Currency(3)
-  val CHF = Currency(4)
-  val USD = Currency(5)
-  val RUB = Currency(6)
-  val PLN = Currency(7)
-  val ISK = Currency(8)
-  val THB = Currency(9)
-  val SEK = Currency(10)
+enum Currency(code: Int, translations: Seq[String] = Seq.empty) {
+  case UAH extends Currency(1, Seq("ГРН"))
+  case EUR extends Currency(2)
+  case CZK extends Currency(3)
+  case CHF extends Currency(4)
+  case USD extends Currency(5)
+  case RUB extends Currency(6)
+  case PLN extends Currency(7)
+  case ISK extends Currency(8)
+  case THB extends Currency(9)
+  case SEK extends Currency(10)
 }
