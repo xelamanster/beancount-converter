@@ -44,11 +44,41 @@ object Decoders:
 
   given FieldDecoder[Boolean] with
     def decode(raw: RawField): Either[DecodeError, Boolean] =
-      raw.toBooleanOption.toRight(DecodeError(s"Cant parse Boolean from [$raw]"))
+      raw.toBooleanOption.toRight(DecodeError(s"Can't parse Boolean from [$raw]"))
 
   given FieldDecoder[Int] with
     def decode(raw: RawField): Either[DecodeError, Int] =
-      raw.toIntOption.toRight(DecodeError(s"Cant parse Int from [$raw]"))
+      raw.toIntOption.toRight(DecodeError(s"Can't parse Int from [$raw]"))
+
+  given FieldDecoder[Double] with
+    def decode(raw: RawField): Either[DecodeError, Double] =
+      if raw.isEmpty then Right(0.0)
+      else raw.toDoubleOption.toRight(DecodeError(s"Can't parse Double from [$raw]"))
+
+  given FieldDecoder[BigDecimal] with
+    def decode(raw: RawField): Either[DecodeError, BigDecimal] =
+      val prepared =
+        if raw.contains(",") then raw.replace(",", ".")
+        else raw
+
+      summon[FieldDecoder[Double]]
+        .decode(prepared)
+        .map(BigDecimal.apply)
+  end given
+
+  given FieldDecoder[LocalDateTime] with
+    def decode(raw: RawField): Either[DecodeError, LocalDateTime] =
+      Try(LocalDateTime.parse(raw, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"))).toEither.left.map(_ => DecodeError(s"Can't parse LocalDateTime from [$raw]"))
+
+  given FieldDecoder[LocalDate] with
+    def decode(raw: RawField): Either[DecodeError, LocalDate] =
+      def parse(pattern: String) = LocalDate.parse(raw, DateTimeFormatter.ofPattern(pattern))
+      Try(parse("dd.MM.yyyy"))
+        .orElse(Try(parse("d/MM/yyyy")))
+        .orElse(Try(parse("yyyy/MM/dd")))
+        .orElse(Try(parse("MMM d, yyyy ")))
+        .toOption
+        .toRight(DecodeError(s"Can't parse LocalDate from [$raw]"))
 
   given RawDecoder[EmptyTuple] with
     def decode(remain: Raw): Either[DecodeError, EmptyTuple] = 
@@ -62,46 +92,6 @@ object Decoders:
         t2 <- summon[RawDecoder[T]].decode(raw.tail)
       } yield Tuple(t1) ++ t2
 
+  given [X](using m: Mirror.ProductOf[X], d: RawDecoder[m.MirroredElemTypes]): Parser[X] = Parser.create
+
 end Decoders
-
-// object Parser {
-//   def apply[T: Parser]: Parser[T] = implicitly[Parser[T]]
-
-//   object implicits {
-//     implicit val intParser: Parser[Int] = _.toIntOption
-
-//     implicit val doubleParser: Parser[Double] =
-//       raw =>
-//         if (raw.isEmpty) Option(0.0)
-//         else raw.toDoubleOption
-
-//     implicit val bigDecimalParser: Parser[BigDecimal] =
-//       raw => {
-//         val prepared =
-//           if (raw.contains(",")) raw.replace(",", ".")
-//           else raw
-
-//         doubleParser
-//           .parse(prepared)
-//           .map(BigDecimal.apply)
-//       }
-
-//     implicit val dateParser: Parser[LocalDate] =
-//       rawDate => {
-//         def parse(pattern: String) = LocalDate.parse(rawDate, DateTimeFormatter.ofPattern(pattern))
-
-//         Try(parse("dd.MM.yyyy"))
-//           .orElse(Try(parse("d/MM/yyyy")))
-//           .orElse(Try(parse("yyyy/MM/dd")))
-//           .orElse(Try(parse("MMM d, yyyy ")))
-//           .toOption
-
-//       }
-
-//     implicit val dateTimeParser: Parser[LocalDateTime] =
-//       raw => Try(LocalDateTime.parse(raw, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"))).toOption
-
-//     implicit val stringParser: Parser[String] = Option(_)
-//   }
-
-// }
