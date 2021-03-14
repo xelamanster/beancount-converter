@@ -1,6 +1,6 @@
 package com.github.xelamanster.beanconverter
 
-import com.github.xelamanster.beanconverter.model.Transaction.implicits._
+import com.github.xelamanster.beanconverter.model.Transaction.given
 import com.github.xelamanster.beanconverter.BeanConverter.ConvertRow
 import com.github.xelamanster.beanconverter.BeanConverter.ReadFileRow
 import com.github.xelamanster.beanconverter.model.{Printer, Transaction, Row}

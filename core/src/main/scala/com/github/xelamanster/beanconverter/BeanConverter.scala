@@ -14,7 +14,7 @@ object BeanConverter {
   type ReadFileRow[S <: FileSettings] = S => Either[BeanReaderError, List[List[String]]]
   type ConvertRow[R <: Row] = (R, Account, Operation) => Transaction
 
-  def apply[R <: Row, S <: FileSettings](implicit converter: BeanConverter[R, S]): BeanConverter[R, S] = converter
+  def apply[R <: Row, S <: FileSettings](using converter: BeanConverter[R, S]): BeanConverter[R, S] = converter
 }
 
 class BeanConverter[R <: Row: Parser, S <: FileSettings](
