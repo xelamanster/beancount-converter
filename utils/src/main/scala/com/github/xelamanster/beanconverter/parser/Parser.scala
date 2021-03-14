@@ -87,10 +87,10 @@ object Decoders:
 
   given [H: FieldDecoder, T <: Tuple : RawDecoder]: RawDecoder[H *: T] with
     def decode(raw: Raw): Either[DecodeError, H *: T] =
-      for {
+      for
         t1 <- summon[FieldDecoder[H]].decode(raw.head)
         t2 <- summon[RawDecoder[T]].decode(raw.tail)
-      } yield Tuple(t1) ++ t2
+      yield Tuple(t1) ++ t2
 
   given [X](using m: Mirror.ProductOf[X], d: RawDecoder[m.MirroredElemTypes]): Parser[X] = Parser.create
 

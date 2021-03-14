@@ -24,10 +24,10 @@ object ConverterApp {
       convertRow: ConvertRow[T],
       printer: Printer
   )(settings: Settings[T, S]) =
-    for {
+    for
       transactions <- readTransactions(readRow, convertRow, settings.readSettings)
       _ <- printer.print(transactions, settings.writeSettings)
-    } yield ()
+    yield ()
 
   private def readTransactions[T <: Row: Parser, S <: FileSettings](
       readRow: ReadFileRow[S],
@@ -37,10 +37,10 @@ object ConverterApp {
     val converter = new BeanConverter(readRow, convertRow)
     settings.filesSettings
       .foldLeft[Either[Throwable, List[Transaction]]](Right(List.empty)) { case (r, file) =>
-        for {
+        for
           res <- r
           t <- converter.convert(settings.contentSettings, file)
-        } yield res ++ t
+        yield res ++ t
       }
   }
 
@@ -57,7 +57,7 @@ object ConverterApp {
       convertFalbackRow: ConvertRow[T2],
       printer: Printer
   ): Unit =
-    (for {
+    (for
       transactions <- readTransactions(readRow, convertRow, mergeSettings.readSettings)
       fallback <- readTransactions(readFalbackRow, convertFalbackRow, mergeSettings.readSettingsFallback)
       merged =
@@ -67,7 +67,7 @@ object ConverterApp {
           }
           .reverse
       _ <- printer.print(merged, mergeSettings.exportSettings)
-    } yield ()).left.foreach(println)
+    yield ()).left.foreach(println)
 
   private def fallbackTo(
       transaction: Transaction,
