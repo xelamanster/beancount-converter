@@ -10,7 +10,10 @@ class MergeSettings[T <: Row, S <: FileSettings, T2 <: Row, S2 <: FileSettings](
     val readSettingsFallback: ReadSettings[T2, S2],
     val exportSettings: WriteSettings,
     val replaceCheck: (Transaction, Transaction) => Boolean
-)
+) {
+    def main: Settings[T, S] = Settings(readSettings, exportSettings)
+    def fallback: Settings[T2, S2] = Settings(readSettingsFallback, exportSettings)
+}
 
 class Settings[T <: Row, S <: FileSettings](
     val readSettings: ReadSettings[T, S],
