@@ -35,6 +35,6 @@ final case class ContentSettings(
     miscMapping: Map[Operation, Seq[String]]
 )
 
-final case class Coordinate(x: Int, y: Int)
+type Coordinate = (Int, Int)
 
 final case class WriteSettings(filename: String)
