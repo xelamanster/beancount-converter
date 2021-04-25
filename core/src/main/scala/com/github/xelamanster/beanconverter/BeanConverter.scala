@@ -43,15 +43,15 @@ class BeanConverter[R <: Row: Parser, S <: FileSettings](
     def fromRow(row: R) =
       findTarget(row.description, contentSettings)
         .fold(
-          ConvertionError(s"no target found for [${row.description}]").invalidNec[List[Transaction]]
+          ConversionError(s"no target found for [${row.description}]").invalidNec[List[Transaction]]
         ) {
           case Ignore => List.empty.validNec
           case o =>
             List(convertRow(row, contentSettings.sourceAccount, o)).validNec
         }
 
-    def combineErrors(errors: NonEmptyChain[ConvertionError]): ConvertionError =
-      ConvertionError(errors.toList.flatMap(_.messages): _*)
+    def combineErrors(errors: NonEmptyChain[ConversionError]): ConversionError =
+      ConversionError(errors.toList.flatMap(_.messages): _*)
 
     rows
       .flatMap(fromRow(_).sequence)

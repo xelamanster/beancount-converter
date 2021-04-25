@@ -8,7 +8,7 @@ sealed trait BeanReaderError extends BeanConverterError
 final case class FileReadError(e: Throwable) extends BeanReaderError
 final case class FileParseError(messages: String*) extends BeanReaderError
 
-final case class ConvertionError(messages: String*) extends BeanConverterError {
+final case class ConversionError(messages: String*) extends BeanConverterError {
   override def toString(): String =
     s"""|Found ${messages.size} problems:
         |${messages.mkString(System.lineSeparator())}

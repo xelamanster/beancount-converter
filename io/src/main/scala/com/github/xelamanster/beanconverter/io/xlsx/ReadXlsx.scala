@@ -24,7 +24,9 @@ object ReadXlsx extends ReadFileRow[XlsxSettings] {
     }
 
     def cells(row: Row) = {
-      (settings.topLeft.x - 1 until settings.topRight.x)
+      val (topLeftX, _) = settings.topLeft
+      val (topRightX, _) = settings.topRight
+      (topLeftX - 1 until topRightX)
         .map(row.getCell(_, MissingCellPolicy.CREATE_NULL_AS_BLANK))
         .map(cellToString)
         .toList
@@ -36,8 +38,9 @@ object ReadXlsx extends ReadFileRow[XlsxSettings] {
   private def readFile(settings: XlsxSettings) =
     Using(WorkbookFactory.create(new File(settings.fileName))) { wb =>
       val sheet = wb.getSheetAt(settings.worksheetId)
-
-      (settings.topLeft.y - 1 until settings.bottomLeft.y)
+      val (_, topLeftY) = settings.topLeft
+      val (_, topRightY) = settings.topRight
+      (topLeftY - 1 until topRightY)
         .map(sheet.getRow)
         .toList
     }.toEither.left.map(FileReadError.apply)
